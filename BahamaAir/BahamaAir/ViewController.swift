@@ -21,12 +21,12 @@ final class ViewController: UIViewController {
   private let status = UIImageView(image: UIImage(named: "banner"))
   private let label = UILabel()
   private let messages = [
-    "Connecting ...",
-    "Authorizing ...",
-    "Sending credentials ...",
+    "Connecting...",
+    "Authorizing...",
+    "Sending credentials...",
     "Failed"
   ]
-  private var statusPosition = CGPoint.zero
+  private var statusCenter = CGPoint.zero
 
   // MARK: Life Cycle
   override func viewDidLoad() {
@@ -42,6 +42,7 @@ final class ViewController: UIViewController {
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
     animateOnAppear()
+    animateClouds()
   }
 
   // MARK: Methods
@@ -63,6 +64,7 @@ final class ViewController: UIViewController {
     label.textColor = UIColor(red: 0.89, green: 0.38, blue: 0, alpha: 1)
     label.textAlignment = .center
     status.addSubview(label)
+    statusCenter = status.center
   }
 
   private func prepareForAnimation() {
@@ -109,15 +111,99 @@ final class ViewController: UIViewController {
 
   @IBAction private func login() {
     view.endEditing(true)
-    UIView.animate(withDuration: 1.5, delay: 0, usingSpringWithDamping: 0.2, initialSpringVelocity: 0, options: []) {
+    UIView.animate(
+      withDuration: 1.5,
+      delay: 0,
+      usingSpringWithDamping: 0.2,
+      initialSpringVelocity: 0,
+      options: [],
+      animations: {
       self.loginButton.bounds.size.width += 80
-    }
+    }, completion: { _ in
+      self.loginButton.isEnabled = false
+      self.showMessage(index: 0)
+    })
     UIView.animate(withDuration: 0.33, delay: 0, usingSpringWithDamping: 0.7, initialSpringVelocity: 0, options: []) {
       self.loginButton.center.y += 60
       self.loginButton.backgroundColor = UIColor(red: 0.85, green: 0.83, blue: 0.45, alpha: 1)
       self.spinner.center = CGPoint(x: 40, y: self.loginButton.frame.size.height / 2)
       self.spinner.alpha = 1
     }
+  }
+
+  private func showMessage(index: Int) {
+    label.text = messages[index]
+
+    UIView.transition(
+      with: status,
+      duration: 0.33,
+      options: [.curveEaseOut, .transitionFlipFromTop],
+      animations: {
+        self.status.isHidden = false
+      },
+      completion: { _ in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+          guard index < self.messages.count - 1 else {
+            self.resetForm()
+            return
+          }
+          self.removeMessage(index: index)
+        }
+      })
+  }
+
+  private func removeMessage(index: Int) {
+    UIView.animate(
+      withDuration: 0.33,
+      animations: {
+        self.status.center.x += self.view.frame.size.width
+      },
+      completion: { _ in
+        self.status.isHidden = true
+        self.status.center = self.statusCenter
+        self.showMessage(index: index + 1)
+      })
+  }
+
+  private func resetForm() {
+    UIView.transition(
+      with: status,
+      duration: 0.2,
+      options: .transitionFlipFromBottom,
+      animations: {
+        self.status.isHidden = true
+        self.status.center = self.statusCenter
+      }, completion: nil)
+    UIView.animate(withDuration: 0.2) {
+      self.spinner.center = CGPoint(x: -20, y: 16)
+      self.spinner.alpha = 0
+      self.loginButton.backgroundColor = UIColor(red: 0.63, green: 0.84, blue: 0.35, alpha: 1)
+      self.loginButton.bounds.size.width -= 80
+      self.loginButton.center.y -= 60
+      self.loginButton.isEnabled = true
+    }
+  }
+
+  private func animateClouds() {
+    animateCloud(cloud1)
+    animateCloud(cloud2)
+    animateCloud(cloud3)
+    animateCloud(cloud4)
+  }
+
+  private func animateCloud(_ cloud: UIImageView) {
+    let cloudSpeed = 60 / view.frame.size.width
+    let duration = (view.frame.size.width - cloud.center.x) * cloudSpeed
+    UIView.animate(
+      withDuration: duration,
+      delay: 0,
+      options: .curveLinear,
+      animations: {
+        cloud.frame.origin.x = self.view.frame.size.width
+      }, completion: { _ in
+        cloud.frame.origin.x = -cloud.frame.size.width
+        self.animateCloud(cloud)
+      })
   }
 
   // MARK: UITextFieldDelegate
