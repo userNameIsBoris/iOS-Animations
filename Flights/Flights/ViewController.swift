@@ -71,9 +71,10 @@ final class ViewController: UIViewController {
   }
 
   private func changeFlight(to flight: FlightData, animated: Bool) {
-    summary.text = flight.summary
     let image = UIImage(named: flight.weatherImageName)
     if animated {
+      planeDepart()
+      summarySwitch(to: flight.summary)
       fade(imageView: bgImageView, toImage: image, showEffects: flight.showWeatherEffects)
 
       let direction: AnimationDirection = flight.isTakingOff ? .positive : .negative
@@ -88,6 +89,7 @@ final class ViewController: UIViewController {
 
       cubeTransition(label: flightStatus, text: flight.flightStatus, direction: direction)
     } else {
+      summary.text = flight.summary
       bgImageView.image = image
       snowView.isHidden = !flight.showWeatherEffects
       flightNr.text = flight.flightNumber
@@ -160,5 +162,50 @@ final class ViewController: UIViewController {
       label.alpha = 1
       label.transform = .identity
     })
+  }
+
+  private func planeDepart() {
+    let originalCenter = planeImage.center
+
+    UIView.animateKeyframes(withDuration: 1.5, delay: 0) {
+      UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.25) {
+        self.planeImage.center.x += 80
+        self.planeImage.center.y -= 10
+      }
+      UIView.addKeyframe(withRelativeStartTime: 0.1, relativeDuration: 0.4) {
+        self.planeImage.transform = CGAffineTransform(rotationAngle: -.pi / 8)
+      }
+      UIView.addKeyframe(withRelativeStartTime: 0.25, relativeDuration: 0.25) {
+        self.planeImage.center.x += 100
+        self.planeImage.center.y -= 50
+        self.planeImage.alpha = 0
+      }
+      UIView.addKeyframe(withRelativeStartTime: 0.51, relativeDuration: 0.01) {
+        self.planeImage.transform = .identity
+        self.planeImage.center = CGPoint(x: 0, y: originalCenter.y)
+      }
+      UIView.addKeyframe(withRelativeStartTime: 0.55, relativeDuration: 0.45) {
+        self.planeImage.alpha = 1
+        self.planeImage.center = originalCenter
+      }
+    }
+  }
+
+  private func summarySwitch(to text: String) {
+    let originalCenter = summary.center
+    let duration = 1.5
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + duration / 2) {
+      self.summary.text = text
+    }
+
+    UIView.animateKeyframes(withDuration: duration, delay: 0) {
+      UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.5) {
+        self.summary.center.y -= 100
+      }
+      UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5) {
+        self.summary.center = originalCenter
+      }
+    }
   }
 }
