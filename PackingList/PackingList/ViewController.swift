@@ -32,6 +32,27 @@ final class ViewController: UIViewController {
   // MARK: - Methods
   @IBAction private func actionToggleMenu(_ sender: AnyObject) {
     isMenuOpen.toggle()
+    titleLabel.superview?.constraints.forEach { constraint in
+      if constraint.firstItem === titleLabel && constraint.firstAttribute == .centerX {
+        constraint.constant = isMenuOpen ? -100 : 0
+        return
+      }
+      if constraint.identifier == "TitleCenterY" {
+        constraint.isActive = false
+        let multiplier = isMenuOpen ? 0.67 : 1
+        let newConstraint = NSLayoutConstraint(
+          item: titleLabel!,
+          attribute: .centerY,
+          relatedBy: .equal,
+          toItem: titleLabel.superview,
+          attribute: .centerY,
+          multiplier: multiplier,
+          constant: 0)
+        newConstraint.identifier = constraint.identifier
+        newConstraint.isActive = true
+        return
+      }
+    }
     menuHeightConstraint.constant = isMenuOpen ? 184 : 44
     titleLabel.text = isMenuOpen ? "Select Item" : "Packing List"
     UIView.animate(withDuration: 1, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 10) {
@@ -39,19 +60,61 @@ final class ViewController: UIViewController {
       let angle = self.isMenuOpen ? CGFloat.pi / 4 : 0
       self.buttonMenu.transform = CGAffineTransform(rotationAngle: angle)
     }
+    if isMenuOpen {
+      slider = HorizontalItemList(inView: view)
+      slider.didSelectItem = { index in
+        print("add \(index)")
+        self.items.append(index)
+        self.tableView.reloadData()
+        self.actionToggleMenu(self)
+      }
+      self.titleLabel.superview!.addSubview(slider)
+      print(titleLabel.superview == view)
+    } else {
+      slider.removeFromSuperview()
+    }
   }
   
   private func showItem(_ index: Int) {
-    print("tapped item \(index)")
+    let image = UIImage(named:"summericons_100px_0\(index)")
+    let imageView = UIImageView(image: image)
+    imageView.backgroundColor = UIColor(white: 0, alpha: 0.5)
+    imageView.layer.cornerRadius = 5
+    imageView.layer.masksToBounds = true
+    imageView.translatesAutoresizingMaskIntoConstraints = false
+    view.addSubview(imageView)
+
+    let constraints = [
+      imageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+      imageView.heightAnchor.constraint(equalTo: imageView.widthAnchor),
+    ]
+    let bottomConstraint = imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: imageView.frame.height)
+    let widthConstraint = imageView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.33, constant: -50)
+    NSLayoutConstraint.activate(constraints + [bottomConstraint, widthConstraint])
+
+    view.layoutIfNeeded()
+    UIView.animateKeyframes(withDuration: 2.4, delay: 0, animations: {
+      UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.33) {
+        bottomConstraint.constant = -imageView.frame.size.height / 2
+        widthConstraint.constant = 0
+        self.view.layoutIfNeeded()
+      }
+      UIView.addKeyframe(withRelativeStartTime: 0.66, relativeDuration: 0.33) {
+        bottomConstraint.constant = imageView.frame.height
+        widthConstraint.constant = -50
+        self.view.layoutIfNeeded()
+      }
+    }, completion: { _ in
+      imageView.removeFromSuperview()
+    })
   }
 }
 
 extension ViewController: UITableViewDelegate, UITableViewDataSource {
-
   // MARK: - Life Cycle
   override func viewDidLoad() {
     super.viewDidLoad()
-    self.tableView?.rowHeight = 54.0
+    self.tableView?.rowHeight = 54
   }
   
   // MARK: - Table View Data Source
@@ -67,7 +130,7 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
     let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath) as UITableViewCell
     cell.accessoryType = .none
     cell.textLabel?.text = itemTitles[items[indexPath.row]]
-    cell.imageView?.image = UIImage(named: "summericons_100px_0\(items[indexPath.row]).png")
+    cell.imageView?.image = UIImage(named: "summericons_100px_0\(items[indexPath.row])")
     return cell
   }
 
