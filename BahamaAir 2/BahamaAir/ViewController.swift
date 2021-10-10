@@ -9,9 +9,9 @@ import UIKit
 
 final class ViewController: UIViewController {
   @IBOutlet private var loginButton: UIButton!
-  @IBOutlet private var heading: UILabel!
-  @IBOutlet private var username: UITextField!
-  @IBOutlet private var password: UITextField!
+  @IBOutlet private var headingLabel: UILabel!
+  @IBOutlet private var usernameTextField: UITextField!
+  @IBOutlet private var passwordTextField: UITextField!
   @IBOutlet private var cloud1: UIImageView!
   @IBOutlet private var cloud2: UIImageView!
   @IBOutlet private var cloud3: UIImageView!
@@ -37,15 +37,15 @@ final class ViewController: UIViewController {
 
   override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
-    prepareForAnimation()
+    setupFormAnimation()
+    setupOtherAnimations()
   }
 
   override func viewDidAppear(_ animated: Bool) {
     super.viewDidAppear(animated)
-    animateOnAppear()
     animateClouds()
-    username.delegate = self
-    password.delegate = self
+    usernameTextField.delegate = self
+    passwordTextField.delegate = self
   }
 
   // MARK: Methods
@@ -78,25 +78,34 @@ final class ViewController: UIViewController {
     view.insertSubview(info, belowSubview: loginButton)
   }
 
-  private func prepareForAnimation() {
-    let flyRightAnimation = CABasicAnimation(keyPath: "position.x")
-    flyRightAnimation.fromValue = -view.bounds.size.width / 2
-    flyRightAnimation.toValue = view.bounds.size.width / 2
-    flyRightAnimation.duration = 0.5
-    flyRightAnimation.delegate = self
-    flyRightAnimation.setValue("form", forKey: "name")
-    
-    flyRightAnimation.setValue(heading.layer, forKey: "layer")
-    heading.layer.add(flyRightAnimation, forKey: nil)
-    flyRightAnimation.beginTime  = CACurrentMediaTime() + 0.3
-    flyRightAnimation.setValue(username.layer, forKey: "layer")
-    username.layer.add(flyRightAnimation, forKey: nil)
-    username.layer.position.x = view.bounds.size.width / 2
-    flyRightAnimation.beginTime = CACurrentMediaTime() + 0.4
-    flyRightAnimation.setValue(password.layer, forKey: "layer")
-    password.layer.add(flyRightAnimation, forKey: nil)
-    password.layer.position.x = view.bounds.size.width / 2
+  private func setupFormAnimation() {
+    let fadeInAnimation = CABasicAnimation(keyPath: "opacity")
+    fadeInAnimation.fromValue = 0.25
+    fadeInAnimation.toValue = 1
 
+    let flyRightAnimation = CABasicAnimation(keyPath: "position.x")
+    flyRightAnimation.fromValue = -view.bounds.width / 2
+    flyRightAnimation.toValue = view.bounds.width / 2
+
+    let animationGroup = CAAnimationGroup()
+    animationGroup.animations = [fadeInAnimation, flyRightAnimation]
+    animationGroup.fillMode = .backwards
+    animationGroup.duration = 0.5
+    animationGroup.delegate = self
+
+    headingLabel.layer.add(animationGroup, forKey: nil)
+
+    animationGroup.setValue("form", forKey: "name")
+    animationGroup.beginTime = CACurrentMediaTime() + 0.3
+    animationGroup.setValue(usernameTextField.layer, forKey: "layer")
+    usernameTextField.layer.add(animationGroup, forKey: nil)
+
+    animationGroup.beginTime = CACurrentMediaTime() + 0.4
+    animationGroup.setValue(passwordTextField.layer, forKey: "layer")
+    passwordTextField.layer.add(animationGroup, forKey: nil)
+  }
+
+  private func setupOtherAnimations() {
     let fadeInAnimation = CABasicAnimation(keyPath: "opacity")
     fadeInAnimation.fromValue = 0
     fadeInAnimation.toValue = 1
@@ -111,11 +120,26 @@ final class ViewController: UIViewController {
     cloud3.layer.add(fadeInAnimation, forKey: nil)
     fadeInAnimation.beginTime = CACurrentMediaTime() + 1.1
     cloud4.layer.add(fadeInAnimation, forKey: nil)
-  
-    loginButton.center.y += 30
-    loginButton.alpha = 0
+
+    let animationGroup = CAAnimationGroup()
+    animationGroup.timingFunction = CAMediaTimingFunction(name: .easeIn)
+    animationGroup.beginTime = CACurrentMediaTime() + 0.5
+    animationGroup.duration = 0.5
+    animationGroup.fillMode = .backwards
+    let scaleDown = CABasicAnimation(keyPath: "transform.scale")
+    scaleDown.fromValue = 3.5
+    scaleDown.toValue = 1
+    let rotation = CABasicAnimation(keyPath: "transform.rotation")
+    rotation.fromValue = .pi / 4.0
+    rotation.toValue = 0
+    let fadeIn = CABasicAnimation(keyPath: "opacity")
+    fadeIn.fromValue = 0
+    fadeIn.toValue = 1
+    animationGroup.animations = [scaleDown, rotation, fadeIn]
+    loginButton.layer.add(animationGroup, forKey: nil)
 
     let flyLeft = CABasicAnimation(keyPath: "position.x")
+    flyLeft.autoreverses = true
     flyLeft.fromValue = info.layer.position.x + view.frame.size.width
     flyLeft.toValue = info.layer.position.x
     flyLeft.duration = 5
@@ -126,14 +150,6 @@ final class ViewController: UIViewController {
     fadeLabelIn.toValue = 1.0
     fadeLabelIn.duration = 4.5
     info.layer.add(fadeLabelIn, forKey: "fadein")
-  }
-
-  private func animateOnAppear() {
-    // Login Button
-    UIView.animate(withDuration: 0.5, delay: 0.5, usingSpringWithDamping: 0.5, initialSpringVelocity: 0, options: []) {
-      self.loginButton.center.y -= 30
-      self.loginButton.alpha = 1
-    }
   }
 
   @IBAction private func login() {
@@ -264,13 +280,13 @@ extension ViewController: CAAnimationDelegate {
 
 extension ViewController: UITextFieldDelegate {
   func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-    let nextField = (textField === username) ? password : username
+    let nextField = (textField === usernameTextField) ? passwordTextField : usernameTextField
     nextField?.becomeFirstResponder()
     return true
   }
 
   func textFieldDidBeginEditing(_ textField: UITextField) {
-    guard let runningAnimations = info.layer.animationKeys() else { return }
+    guard info.layer.animationKeys() != nil else { return }
     info.layer.removeAnimation(forKey: "infoappear")
   }
 }
