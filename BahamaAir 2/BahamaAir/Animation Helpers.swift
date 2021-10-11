@@ -8,20 +8,23 @@
 import UIKit
 
 func tintBackgroundColor(layer: CALayer, toColor: CGColor) {
-  let animation = CABasicAnimation(keyPath: "backgroundColor")
+  let animation = CASpringAnimation(keyPath: "backgroundColor")
+  animation.damping = 5
+  animation.initialVelocity = -10
   animation.fromValue = layer.backgroundColor
   animation.toValue = toColor
-  animation.duration = 1
-
+  animation.duration = animation.settlingDuration
+  
   layer.add(animation, forKey: nil)
   layer.backgroundColor = toColor
 }
 
 func roundCorners(layer: CALayer, toRadius: CGFloat) {
-  let animation = CABasicAnimation(keyPath: "cornerRadius")
+  let animation = CASpringAnimation(keyPath: "cornerRadius")
+  animation.damping = 5
   animation.fromValue = layer.cornerRadius
   animation.toValue = toRadius
-  animation.duration = 0.33
+  animation.duration = animation.settlingDuration
 
   layer.add(animation, forKey: nil)
   layer.cornerRadius = toRadius
