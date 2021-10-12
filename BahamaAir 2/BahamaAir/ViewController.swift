@@ -174,6 +174,25 @@ final class ViewController: UIViewController {
     let tintColor = UIColor(red: 0.85, green: 0.83, blue: 0.45, alpha: 1)
     tintBackgroundColor(layer: loginButton.layer, toColor: tintColor.cgColor)
     roundCorners(layer: loginButton.layer, toRadius: 25)
+
+    let initialPosition = CGPoint(x: -50, y: 0)
+    let finalPosition = CGPoint(x: -50, y: loginButton.center.y)
+    let balloonLayer = CALayer()
+    balloonLayer.contents = UIImage(named: "balloon")?.cgImage
+    balloonLayer.frame = CGRect(x: initialPosition.x, y: initialPosition.y, width: 50, height: 65)
+    view.layer.insertSublayer(balloonLayer, below: usernameTextField.layer)
+
+    let flightAnimation = CAKeyframeAnimation(keyPath: "position")
+    flightAnimation.duration = 12
+    flightAnimation.values = [
+      initialPosition,
+      CGPoint(x: view.frame.width + 50, y: 160),
+      finalPosition,
+    ].map { NSValue(cgPoint: $0) }
+    flightAnimation.keyTimes = [0, 0.5, 1]
+
+    balloonLayer.add(flightAnimation, forKey: nil)
+    balloonLayer.position = finalPosition
   }
 
   private func showMessage(index: Int) {
@@ -230,6 +249,13 @@ final class ViewController: UIViewController {
       self.loginButton.center.y -= 60
       self.loginButton.isEnabled = true
     }
+  
+    let wobbleAnimation = CAKeyframeAnimation(keyPath: "transform.rotation")
+    wobbleAnimation.duration = 0.25
+    wobbleAnimation.repeatCount = 4
+    wobbleAnimation.values = [0, -.pi / 4.0, 0, .pi / 4.0, 0]
+    wobbleAnimation.keyTimes = [0, 0.25, 0.5, 0.75, 1]
+    headingLabel.layer.add(wobbleAnimation, forKey: nil)
   }
 
   private func animateClouds() {
